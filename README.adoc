@@ -20,6 +20,9 @@ All you need to install Alpine Linux is just https://github.com/alpinelinux/apk-
 
 *Note*: If you use *GitHub Actions*, you’re better off using https://github.com/jirutka/setup-alpine[jirutka/setup-alpine] instead of this script.
 
+*WARNING*: This script must run as the root user, and it modifies the HOST
+system.  Run the generated `$CHROOT/destroy` script to safely remove the chroot
+it creates.  See `-h` text for details.
 
 == Requirements
 

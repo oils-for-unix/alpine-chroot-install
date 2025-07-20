@@ -21,8 +21,17 @@
 #   6. executes specified command or "sh" if not provided.
 #
 # Example:
+#   # Create chroot
 #   sudo alpine-chroot-install -d /alpine -p build-base -p cmake
+#
+#   # Run ./build inside chroot
 #	/alpine/enter-chroot -u $USER ./build
+#
+#   # Safely destroy chroot
+#	/alpine/destroy
+#
+# WARNING: Do not run 'rm -rf /alpine' instead of /alpine/destroy.  It can
+# destroy parts of the HOST system, like /dev and the $BIND_DIR.
 #
 # Options and environment variables:
 #   -a ARCH                CPU architecture for the chroot. If not set, then it's
