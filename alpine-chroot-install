@@ -57,9 +57,9 @@
 #   -m ALPINE_MIRROR...    URI of the Aports mirror to fetch packages from
 #                          (default is http://dl-cdn.alpinelinux.org/alpine).
 #
-#   -n                     To be safe, do NOT mount host directories.  Instead,
-#                          directly mount file systems like sysfs and devtmpfs.
-#                          ($NO_BIND_HOST)
+#   -n                     To be safe, do NOT mount host directories like /dev
+#                          and /sys.  Instead, directly mount file systems like
+#                          devtmpfs and sysfs.  ($NO_BIND_HOST)
 #
 #   -p ALPINE_PACKAGES...  Alpine packages to install into the chroot (default is
 #                          build-base ca-certificates ssl_client).
@@ -329,6 +329,9 @@ fi
 mkdir -p "$CHROOT_DIR"
 cd "$CHROOT_DIR"
 
+if [ -n "$(ls -A "$CHROOT_DIR")" ]; then
+  die "Directory $CHROOT_DIR should be empty"
+fi
 
 # Install QEMU user mode emulation if needed (works only on Debian and derivates)
 
@@ -403,7 +406,7 @@ if [ -n "$NO_BIND_HOST" ]; then
   mount -v -t sysfs sysfs sys/
 
   mkdir -p dev/
-  mount -v -t devtmps devtmpfs dev/
+  mount -v -t devtmpfs devtmpfs dev/
 
   # Note: not supporting shm and $BIND_DIR for now
 
