@@ -1,0 +1,13 @@
+#!/bin/sh
+#
+# Example enter-hook, that uses the old chroot behavior.
+# We also want to support bubblewrap.
+
+set -e
+
+user=$1
+shift
+
+chroot . /usr/bin/env -i su -l "$user" \
+	sh -c '. /etc/profile; . /env.sh; "$@"' \
+	-- "$@"

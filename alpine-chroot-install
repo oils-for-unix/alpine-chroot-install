@@ -45,6 +45,9 @@
 #   -d CHROOT_DIR          Absolute path to the directory where Alpine chroot
 #                          should be installed (default is /alpine).
 #
+#   -g                     Print the 'enter-chroot' script and exit (for
+#                          development)
+#
 #   -i BIND_DIR            Absolute path to the directory on the host system that
 #                          should be mounted on the same path inside the chroot
 #                          (default is PWD, if it's under /home, or none).
@@ -211,9 +214,18 @@ gen_chroot_script() {
 
 		cd "$(dirname "$0")"
 		$_sudo mv "$tmpfile" env.sh
-		$_sudo chroot . /usr/bin/env -i su -l "$user" \
-		    sh -c ". /etc/profile; . /env.sh; cd '$oldpwd' 2>/dev/null; \"\$@\"" \
-		    -- "${@:-sh}"
+
+		# Check if hook script exists next to enter-chroot
+		hook='./enter-hook'
+		if [ -x "$hook" ]; then
+		    # Note: $oldpwd isn't necessary; 'cd $oldpwd' below is a bug!
+		    # hook should source the fixed path /env.sh
+		    $_sudo "$hook" "$user" "${@:-sh}"
+		else
+		    $_sudo chroot . /usr/bin/env -i su -l "$user" \
+		        sh -c ". /etc/profile; . /env.sh; cd '$oldpwd' 2>/dev/null; \"\$@\"" \
+		        -- "${@:-sh}"
+		fi
 	EOF
 	# NOTE: ash does not load login profile when run with QEMU user-mode
 	# emulation (I have no clue why), that's why /etc/profile is sourced here.
@@ -284,11 +296,12 @@ install_qemu_user() {
 
 #============================  M a i n  ============================#
 
-while getopts 'a:b:d:i:k:m:np:r:t:hv' OPTION; do
+while getopts 'a:b:d:gi:k:m:np:r:t:hv' OPTION; do
 	case "$OPTION" in
 		a) ARCH="$OPTARG";;
 		b) ALPINE_BRANCH="$OPTARG";;
 		d) CHROOT_DIR="$OPTARG";;
+		g) GEN_HOOK=1;;
 		i) BIND_DIR="$OPTARG";;
 		k) CHROOT_KEEP_VARS="${CHROOT_KEEP_VARS:-} $OPTARG";;
 		m) ALPINE_MIRROR="$OPTARG";;
@@ -309,8 +322,16 @@ done
 : ${CHROOT_DIR:="/alpine"}
 : ${CHROOT_KEEP_VARS:="ARCH CI QEMU_EMULATOR TRAVIS_.*"}
 : ${EXTRA_REPOS:=}
+: ${GEN_HOOK:=}
 : ${NO_BIND_HOST:=}
 : ${TEMP_DIR:=$(mktemp -d || echo /tmp/alpine)}
+
+# For development: print 'enter-chroot' script and exit
+if [ -n "$GEN_HOOK" ]; then
+    QEMU_EMULATOR=''
+    gen_chroot_script
+    exit
+fi
 
 if [ -n "$NO_BIND_HOST" ]; then
   # Note: Binding $PWD into chroot as default was a bad idea. It's convenient
@@ -320,7 +341,6 @@ if [ -n "$NO_BIND_HOST" ]; then
       /home/*) BIND_DIR="$(pwd)";;
   esac
 fi
-
 
 if [ "$(id -u)" -ne 0 ]; then
 	die 'This script must be run as root!'
