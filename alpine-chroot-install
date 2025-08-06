@@ -309,10 +309,10 @@ done
 : ${CHROOT_DIR:="/alpine"}
 : ${CHROOT_KEEP_VARS:="ARCH CI QEMU_EMULATOR TRAVIS_.*"}
 : ${EXTRA_REPOS:=}
+: ${NO_BIND_HOST:=}
 : ${TEMP_DIR:=$(mktemp -d || echo /tmp/alpine)}
 
-# 2025-07: Disabled for Oils
-if false; then
+if [ -n "$NO_BIND_HOST" ]; then
   # Note: Binding $PWD into chroot as default was a bad idea. It's convenient
   # on Travis, but dangerous in general. However, all existing .travis.yml relies
   # on this behaviour, so we can't (shouldn't) remove it completely.
